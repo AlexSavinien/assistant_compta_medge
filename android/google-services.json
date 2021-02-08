@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "569071230347",
+    "project_id": "assistant-compta-med-ge",
+    "storage_bucket": "assistant-compta-med-ge.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:569071230347:android:3ff313386a3d6ee2e7638e",
+        "android_client_info": {
+          "package_name": "com.alexandresavinien.assistant_compta_medge"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "569071230347-2iq2lq72s29t5nr5d9smdm9ionh63dqq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqPCf59p1vD71WGnTFN0s7nXsBrw1wbxk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "569071230347-2iq2lq72s29t5nr5d9smdm9ionh63dqq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
