@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Router;
 import 'package:flutter_riverpod/all.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:stacked_services/stacked_services.dart';
+
+import 'app/router.gr.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,14 +16,13 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      navigatorKey: StackedService.navigatorKey,
+      onGenerateRoute: Router().onGenerateRoute,
+      initialRoute: Routes.homeView,
+      title: 'Click & Collect',
     );
   }
 }
