@@ -1,4 +1,4 @@
-# Assistant de comptabilité / Télétransmission pour Médecin
+# Assistant de comptabilité / télétransmission pour Médecin (french users only)
 
 Une application créé avec Flutter et Firebase
 An application created with Flutter and Firebase
