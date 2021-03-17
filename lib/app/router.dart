@@ -2,8 +2,8 @@ import 'package:assistant_compta_medge/ui/views/authentification/signin/signin_v
 import 'package:assistant_compta_medge/ui/views/authentification/signup/signup_view.dart';
 import 'package:assistant_compta_medge/ui/views/authentification/startup/startup_view.dart';
 import 'package:assistant_compta_medge/ui/views/menu/menu_view.dart';
-import 'package:assistant_compta_medge/ui/views/profile/add_worplace/add_workplace_view.dart';
-import 'package:assistant_compta_medge/ui/views/profile/profile_view/profil_view.dart';
+import 'package:assistant_compta_medge/ui/views/menu/profile/add_worplace/add_workplace_view.dart';
+import 'package:assistant_compta_medge/ui/views/menu/profile/profile_view/profil_view.dart';
 import 'package:auto_route/auto_route_annotations.dart';
 
 @MaterialAutoRouter(

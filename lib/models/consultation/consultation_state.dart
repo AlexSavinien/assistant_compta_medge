@@ -1,63 +1,60 @@
+import 'dart:async';
 import 'package:assistant_compta_medge/models/consultation/consultation.dart';
-import 'package:assistant_compta_medge/models/medecin/medecin_state.dart';
 import 'package:assistant_compta_medge/models/workplace/workplace.dart';
-import 'package:flutter_riverpod/all.dart';
+import 'package:assistant_compta_medge/services/firestore_service.dart';
+import 'package:assistant_compta_medge/ui/views/menu/consultations/consultations_viewmodel.dart';
+import 'package:assistant_compta_medge/ui/views/menu/home/home_viewmodel.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final consultationNotifierProvider =
-    StateNotifierProvider<ConsultationStateNotifier>((ref) {
-  return ConsultationStateNotifier(
-    ref.watch(medecinNotifierProvider),
-  );
+final consultationStreamProvider = StreamProvider.autoDispose<List<Consultation>>((ref) async* {
+  final FirestoreService _firestoreService = ref.watch(firestoreProvider);
+  Workplace selectedWorkplace = ref.watch(homeViewModelProvider).selectedWorkplace;
+
+  if (selectedWorkplace != null) {
+    Stream<QuerySnapshot> stream = _firestoreService.getConsultationsAsAStream(
+      workplace: selectedWorkplace,
+    );
+
+    yield* stream.map((snapshot) {
+      return snapshot.docs
+          .map((e) => Consultation(
+                date: e.data()['date'],
+                price: e.data()['price'],
+                paiementType: e.data()['paiementType'],
+                tp: e.data()['tp'],
+                note: e.data()['note'],
+                id: e.id,
+              ))
+          .toList();
+    });
+  } else {
+    yield* Stream.empty();
+  }
 });
 
-// ignore: camel_case_types
-class ConsultationStateNotifier extends StateNotifier<Consultation> {
-  ConsultationStateNotifier(this._medecinStateNotifier)
-      : super(
-          Consultation(
-            tp: false,
-            price: 25,
-            workplace: _medecinStateNotifier.state.selectedWorkplace ?? null,
-            note: '',
-          ),
-        );
-  MedecinStateNotifier _medecinStateNotifier;
+final monthConsultationsStreamProvider =
+    StreamProvider.autoDispose<List<Consultation>>((ref) async* {
+  final FirestoreService _firestoreService = ref.watch(firestoreProvider);
+  Workplace selectedWorkplace = ref.watch(homeViewModelProvider).selectedWorkplace;
+  DateTime selectedDate = ref.watch(consultationsViewModelProvider).selectedDate;
 
-  String get id => state.id;
-  void setId({String id}) {
-    state.id = id;
-    print('New id is now : ${state.id}');
+  if (selectedWorkplace != null) {
+    Stream<QuerySnapshot> stream = _firestoreService.getMonthConsultationsAsAStream(
+        workplace: selectedWorkplace, dateTime: selectedDate);
+    yield* stream.map((snapshot) {
+      return snapshot.docs
+          .map((e) => Consultation(
+                date: e.data()['date'],
+                price: e.data()['price'],
+                paiementType: e.data()['paiementType'],
+                tp: e.data()['tp'],
+                note: e.data()['note'],
+                id: e.id,
+              ))
+          .toList();
+    });
+  } else {
+    yield* Stream.empty();
   }
-
-  String get paiementType => state.paiementType;
-  void setPaiementType({String newPaiementType}) {
-    state.paiementType = newPaiementType;
-    print('New selected paiement type : ${state.paiementType}');
-  }
-
-  double get price => state.price;
-  void setPrice({double newPrice}) {
-    state.price = newPrice;
-    print('price is now : ${state.price}');
-  }
-
-  String get note => state.note;
-  void setNote({String newNote}) {
-    state.note = newNote;
-    print('New note is : ${state.note}');
-  }
-
-  bool get tp => state.tp;
-  void setTp({bool newTp}) {
-    state.tp = newTp;
-    print('Tier payant is now : ${state.tp}');
-  }
-
-  DateTime get date => state.date;
-  void setDate() {
-    state.date = DateTime.now();
-    print('Date is now : ${state.date}');
-  }
-
-  Workplace get workplace => _medecinStateNotifier.state.selectedWorkplace;
-}
+});

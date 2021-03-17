@@ -1,30 +1,30 @@
 import 'package:assistant_compta_medge/models/consultation/consultation.dart';
 import 'package:assistant_compta_medge/models/medecin/medecin.dart';
-import 'package:assistant_compta_medge/models/medecin/medecin_state.dart';
 import 'package:assistant_compta_medge/models/workplace/workplace.dart';
 import 'package:assistant_compta_medge/services/authentification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/all.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
 
 final firestoreProvider = Provider<FirestoreService>((ref) {
-  return FirestoreService(ref.watch(authentificationServiceProvider),
-      ref.watch(medecinNotifierProvider.state));
+  return FirestoreService(
+    ref.watch(authentificationServiceProvider),
+  );
 });
 
 class FirestoreService {
   final AuthentificationService _auth;
-  final Medecin _medecin;
-  // MedecinStateNotifier _medecinStateNotifier;
 
-  FirestoreService(this._auth, this._medecin);
+  FirestoreService(
+    this._auth,
+  );
 
-  CollectionReference medecins =
-      FirebaseFirestore.instance.collection('medecin');
+  CollectionReference medecins = FirebaseFirestore.instance.collection('medecin');
 
-  /// =========================================================================
-  /// =========================== Getter / Setter =============================
-  /// =========================================================================
-  Medecin get medecinStateNotifier => _medecin;
+  Future<void> signOut() async {
+    await FirebaseFirestore.instance.terminate();
+    await FirebaseFirestore.instance.clearPersistence();
+  }
 
   /// =========================================================================
   /// =========================== Medecins CRUD ===============================
@@ -33,7 +33,7 @@ class FirestoreService {
   Future<void> addMedecin({Medecin medecin}) async {
     String id = _auth.currentUser.uid;
     medecin.id = id;
-    medecins
+    await medecins
         .doc(id)
         .set(medecin.toJson())
         .then((value) => print('User added'))
@@ -48,9 +48,29 @@ class FirestoreService {
     return medecin;
   }
 
-  Future<void> updateMedecin() async {
-    //TODO
+  Stream<DocumentSnapshot> getMedecinAsStream() {
+    String id = _auth.currentUser.uid;
+    Stream<DocumentSnapshot> stream = medecins.doc(id).snapshots();
+    return stream;
   }
+
+  Future<void> updateMedecin({String fieldName, dynamic newValue}) async {
+    String id = _auth.currentUser.uid;
+    medecins.doc(id).update({fieldName: newValue});
+    print('Medecin $fieldName has been updated to ${newValue.toString()}');
+    if (fieldName == 'email') {
+      await _auth.currentUser.updateEmail(newValue);
+      print(_auth.currentUser.email);
+    }
+  }
+
+  Future<void> updateMedecinPreferences({String fieldName, dynamic newValue}) async {
+    String id = _auth.currentUser.uid;
+    medecins.doc(id).set({
+      'preferences': {fieldName: newValue}
+    }, SetOptions(merge: true));
+  }
+
   Future<void> delete() async {
     //TODO
   }
@@ -59,9 +79,8 @@ class FirestoreService {
   /// =========================== Workplace CRUD ==============================
   /// =========================================================================
 
-  Future<void> addWorkplace({String name}) async {
+  Future<void> addWorkplace({Workplace workplace}) async {
     String id = _auth.currentUser.uid;
-    Workplace workplace = Workplace(name: name);
     await medecins
         .doc(id)
         .collection('workplaces')
@@ -74,11 +93,8 @@ class FirestoreService {
     String id = _auth.currentUser.uid;
     Workplace workplace;
 
-    QuerySnapshot res = await medecins
-        .doc(id)
-        .collection('workplaces')
-        .where('name', isEqualTo: name)
-        .get();
+    QuerySnapshot res =
+        await medecins.doc(id).collection('workplaces').where('name', isEqualTo: name).get();
 
     res.docs.forEach((doc) {
       String workplaceName = doc['name'];
@@ -91,47 +107,50 @@ class FirestoreService {
   }
 
   Stream<QuerySnapshot> getWorkplacesAsStream() {
-    String id = _auth.currentUser.uid;
-    List<Workplace> workplaces = [];
-    Stream<QuerySnapshot> stream =
-        medecins.doc(id).collection('workplaces').snapshots();
-
-    // Ajoute de la list de workspace au state du medecin
-    stream.last.then((value) {
-      value.docs.map((e) {
-        workplaces.add(Workplace.fromJson(e.data()));
-      });
-    });
-    _medecin.workplaces = workplaces;
-    return stream;
+    if (_auth.currentUser != null) {
+      String id = _auth.currentUser.uid;
+      Stream<QuerySnapshot> stream = medecins.doc(id).collection('workplaces').snapshots();
+      print('stream is : $stream');
+      return stream;
+    } else {
+      print('no user detected, empty stream of workplaces send from firestoreService');
+      return Stream.empty();
+    }
   }
 
-  Future<List<Workplace>> getWorkplaces() async {
+  Future<QuerySnapshot> getWorkplaces() async {
     String id = _auth.currentUser.uid;
-    List<Workplace> workplaces = [];
-    var res = await medecins.doc(id).collection('workplaces').get();
-    res.docs.forEach((doc) {
-      String workplaceName = doc['name'];
-      String workplaceId = doc.id;
-      Workplace workplace = Workplace(id: workplaceId, name: workplaceName);
-      workplaces.add(workplace);
-    });
-    return workplaces;
+    QuerySnapshot res = await medecins.doc(id).collection('workplaces').get();
+    return res;
   }
 
-  Future<void> updateWorkplace() async {
-    //TODO
+  Future<void> updateWorkplace({Workplace workplace}) async {
+    String id = _auth.currentUser.uid;
+    await medecins.doc(id).collection('workplaces').doc(workplace.id).set(workplace.toJson());
+  }
+
+  Future<void> updatePreviousDefaultWorkplace() async {
+    String id = _auth.currentUser.uid;
+    await medecins
+        .doc(id)
+        .collection('workplaces')
+        .where('isDefault', isEqualTo: true)
+        .get()
+        .then((value) {
+      if (value.docs.length == 1) {
+        medecins.doc(id).collection('workplaces').doc(value.docs.first.id).set(
+          {'isDefault': false},
+          SetOptions(merge: true),
+        );
+      }
+    });
   }
 
   Future<void> deleteWorkplace({String name}) async {
     String id = _auth.currentUser.uid;
     Workplace workplace = await getWorkplace(name: name);
     try {
-      await medecins
-          .doc(id)
-          .collection('workplaces')
-          .doc(workplace.id)
-          .delete();
+      await medecins.doc(id).collection('workplaces').doc(workplace.id).delete();
       print('Workplace with id : ${workplace.id} has been deleted.');
     } on FirebaseException catch (e) {
       print('FirebaseException is : $e');
@@ -152,14 +171,13 @@ class FirestoreService {
           .doc(workplace.id)
           .collection('consultations')
           .add(consultation.toJson());
-      print(
-          'Consultation ${consultation.toJson()} has been added to ${workplace.name}');
+      print('Consultation ${consultation.toJson()} has been added to ${workplace.name}');
     } on FirebaseException catch (e) {
       print('FirebaseException is : $e');
     }
   }
 
-  Future<void> getConsultation(Consultation consultation) async {
+  Future<void> getConsultation({Consultation consultation}) async {
     //TODO
   }
 
@@ -179,11 +197,52 @@ class FirestoreService {
     return consultations;
   }
 
-  Future<void> updateConsultation(Consultation consultation) async {
+  Future<void> updateConsultation({Consultation consultation}) async {
     //TODO
   }
 
-  Future<void> deleteConsultation(Consultation consultation) async {
-    //TODO
+  Future<void> deleteConsultation({Consultation consultation, String workplaceId}) async {
+    String id = _auth.currentUser.uid;
+
+    medecins
+        .doc(id)
+        .collection('workplaces')
+        .doc(workplaceId)
+        .collection('consultations')
+        .doc(consultation.id)
+        .delete();
+    print(
+        'Consultation du ${DateFormat.Md('fr_FR').format(consultation.date.toDate())} à ${DateFormat.Hm('fr_FR').format(consultation.date.toDate())} au prix de ${consultation.price}€ payé en ${consultation.paiementType} a bien été supprimé du cabinet ${consultation.workplace}');
+  }
+
+  Stream<QuerySnapshot> getConsultationsAsAStream({Workplace workplace}) {
+    String id = _auth.currentUser.uid;
+    Stream<QuerySnapshot> stream = medecins
+        .doc(id)
+        .collection('workplaces')
+        .doc(workplace.id.toString())
+        .collection('consultations')
+        .orderBy('date')
+        .snapshots();
+    return stream;
+  }
+
+  Stream<QuerySnapshot> getMonthConsultationsAsAStream({Workplace workplace, DateTime dateTime}) {
+    String id = _auth.currentUser.uid;
+    String date = DateFormat('yMMMM', 'fr_FR').toString();
+    String month = date.split(' ')[0];
+    String year = date.split(' ')[1];
+    print('date is $month, $year');
+    Stream<QuerySnapshot> stream = medecins
+        .doc(id)
+        .collection('workplaces')
+        .doc(workplace.id.toString())
+        .collection('consultations')
+        .where('date',
+            isGreaterThanOrEqualTo: DateTime(dateTime.year, dateTime.month),
+            isLessThanOrEqualTo: DateTime(dateTime.year, dateTime.month + 1))
+        .orderBy('date')
+        .snapshots();
+    return stream;
   }
 }

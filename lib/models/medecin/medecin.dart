@@ -7,6 +7,11 @@ class Medecin {
   String email;
   List<Workplace> workplaces = [];
   Workplace selectedWorkplace;
+  Map<String, dynamic> preferences = {
+    'defaultPrice': null,
+    'defaultWorkplace': null,
+    'defaultPaiementType': null,
+  };
 
   Medecin(
       {this.id,
@@ -14,19 +19,21 @@ class Medecin {
       this.lastname,
       this.email,
       this.workplaces,
-      this.selectedWorkplace})
+      this.selectedWorkplace,
+      this.preferences})
       : super();
 
   Medecin.fromJson(Map<String, dynamic> data)
-      : id = data['id'],
-        firstname = data['firstname'],
+      : firstname = data['firstname'],
         lastname = data['lastname'],
-        email = data['email'];
+        email = data['email'],
+        preferences = data['preferences'];
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'firstname': firstname,
         'lastname': lastname,
         'email': email,
+        'preferences': preferences
       };
 }

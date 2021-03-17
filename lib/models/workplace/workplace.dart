@@ -4,15 +4,16 @@ class Workplace {
   String id;
   String name;
   Medecin medecin;
+  bool isDefault;
 
-  Workplace({this.id, this.name, this.medecin});
+  Workplace({this.id, this.name, this.medecin, this.isDefault});
 
   Workplace.fromJson(Map<String, dynamic> data)
-      : id = data['id'],
-        name = data['name'];
+      : name = data['name'],
+        isDefault = data['isDefault'];
 
   Map<String, dynamic> toJson() => {
-        'id': id,
         'name': name,
+        'isDefault': isDefault,
       };
 }

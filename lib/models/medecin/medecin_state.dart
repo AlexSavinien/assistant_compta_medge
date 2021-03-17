@@ -1,51 +1,16 @@
 import 'package:assistant_compta_medge/models/medecin/medecin.dart';
-import 'package:assistant_compta_medge/models/workplace/workplace.dart';
 import 'package:assistant_compta_medge/services/firestore_service.dart';
-import 'package:flutter_riverpod/all.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final medecinNotifierProvider =
-    StateNotifierProvider<MedecinStateNotifier>((ref) {
-  return MedecinStateNotifier(ref.read(
-    firestoreProvider,
-  ));
+final medecinProvider = StreamProvider.autoDispose<Medecin>((ref) async* {
+  final FirestoreService _firestoreService = ref.watch(firestoreProvider);
+  Stream<DocumentSnapshot> stream = _firestoreService.getMedecinAsStream();
+  print('Med stream working');
+  await for (final value in stream) {
+    Medecin medecin = Medecin.fromJson(value.data());
+    medecin.id = value.id;
+    print('medecin is ${medecin.toJson()}');
+    yield medecin;
+  }
 });
-
-class MedecinStateNotifier extends StateNotifier<Medecin> {
-  MedecinStateNotifier(this._firestoreService) : super(Medecin());
-  final FirestoreService _firestoreService;
-
-  Future<void> getMedecinInfoFromFirebase() async {
-    print('Trying to get med info from firebase');
-    state = await _firestoreService.getMedecin();
-  }
-
-  String get id => state.id;
-  void setId({String newId}) {
-    state.id = newId;
-  }
-
-  String get firstname => state.firstname;
-  void setFirstname({String newFirstname}) {
-    state.firstname = newFirstname;
-  }
-
-  String get lastname => state.lastname;
-  void setLastName({String newLastName}) {
-    state.lastname = newLastName;
-  }
-
-  String get email => state.email;
-  void setEmail({String newEmail}) {
-    state.email = newEmail;
-  }
-
-  List<Workplace> get workplaces => state.workplaces;
-  void setWorkplaces(List<Workplace> workplaces) {
-    state.workplaces = workplaces;
-  }
-
-  Workplace get selectedWorkplace => state.selectedWorkplace;
-  void setSelectedWorkplace({Workplace workplace}) {
-    state.selectedWorkplace = workplace;
-  }
-}
